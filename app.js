@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { ChannelType, Client, Events, GatewayIntentBits, PermissionsBitField } from 'discord.js';
 
-import { guilds, botToken } from './config.js';
+import { guilds, botToken, minDate } from './config.js';
 
 const client = new Client({ intents: [
 	GatewayIntentBits.Guilds,
@@ -139,8 +139,7 @@ client.once(Events.ClientReady, async(c) => {
 						};
 					}
 
-					//if(message.createdTimestamp < (new Date(2022, 11, 31)).getTime()) {
-					if(message.createdTimestamp < (new Date(2023, 2, 27)).getTime()) {
+					if(message.createdTimestamp < minDate.getTime()) {
 						beforeMode = false;
 						break;
 					}
