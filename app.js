@@ -41,6 +41,11 @@ client.once(Events.ClientReady, async(c) => {
 		// Persist channels list
 		const channels = await getTextChannelsForGuild(guilds[guildName]);
 		const reducedChannels = channels.map(x => ({ id: x.id, name: x.name }));
+		const threads = Array.from((await channels.first().threads.fetch()).threads.values());
+		for(const thread of threads) {
+			reducedChannels.push({ id: thread.id, name: thread.name });
+		}
+
 		await writeFile(`${guildDir}/channels.json`, JSON.stringify(reducedChannels, null, 4));
 
 		// Load users cache
@@ -51,8 +56,13 @@ client.once(Events.ClientReady, async(c) => {
 			users = JSON.parse(usersListStr);
 		} catch(e) { /* Do not exists: default value */ }
 
-		for(let channel of channels) {
-			channel = channel[1];
+		let channelsList = Array.from(channels.values());
+
+		for(const thread of threads) {
+			channelsList.push(thread);
+		}
+
+		for(let channel of channelsList) {
 
 			if(!channel.permissionsFor(client.user).has([PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory])) {
 				console.log(`Skipping ${channel.name}, reason: no permissions to read`);
