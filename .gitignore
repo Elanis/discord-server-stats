@@ -1,0 +1,5 @@
+_old
+config.js
+data/*/*.json
+node_modules/
+reports/*/*.csv
