@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { ChannelType, Client, Events, GatewayIntentBits } from 'discord.js';
+import { ChannelType, Client, Events, GatewayIntentBits, PermissionsBitField } from 'discord.js';
 
 import { guilds, botToken } from './config.js';
 
@@ -52,7 +52,12 @@ client.once(Events.ClientReady, async(c) => {
 		} catch(e) { /* Do not exists: default value */ }
 
 		for(let channel of channels) {
-			channel = channel[1]
+			channel = channel[1];
+
+			if(!channel.permissionsFor(client.user).has([PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory])) {
+				console.log(`Skipping ${channel.name}, reason: no permissions to read`);
+				continue;
+			}
 
 			// Load messages cache
 			let messages = [];
@@ -79,7 +84,7 @@ client.once(Events.ClientReady, async(c) => {
 			let beforeMode = true;
 			let shouldQuit = false;
 			while(!shouldQuit) {
-				let options = { limit: 50 };
+				let options = { limit: 100 };
 
 				if(messages.length > 0) {
 					if(beforeMode) {
