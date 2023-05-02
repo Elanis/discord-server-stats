@@ -243,6 +243,10 @@ async function channelInfo(interaction) {
 	} catch(e) { console.error(e); /* Do not exists: default value */ }
 
 	const filteredMessages = messages.filter(x => from.getTime() <= x.createdTimestamp && x.createdTimestamp <= to.getTime());
+	if(filteredMessages.length === 0) {
+		return await interaction.editReply({ content: `No data for channel "${channel.name}" between ${getDateFromDateTime(from)} and ${getDateFromDateTime(to)}` });
+	}
+
 	const topUsersObj = {};
 	for(const filteredMessage of filteredMessages) {
 		if(!topUsersObj[filteredMessage.author]) {
