@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { ChannelType, Client, Events, GatewayIntentBits, PermissionsBitField } from 'discord.js';
+import { ApplicationCommandOptionType, ChannelType, Client, EmbedBuilder, Events, GatewayIntentBits, PermissionsBitField } from 'discord.js';
 
 import { guilds, botToken, minDate } from './config.js';
 
@@ -9,6 +9,10 @@ const client = new Client({ intents: [
 	GatewayIntentBits.GuildMessages,
 	GatewayIntentBits.MessageContent,
 ] });
+
+function getDateFromDateTime(date) {
+	return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${(date.getDate()).toString().padStart(2, '0')}`;
+}
 
 async function sleep(ms) {
 	await new Promise((resolve, reject) => setTimeout(resolve, ms));
@@ -24,12 +28,46 @@ async function getGuild(id) {
 async function getTextChannelsForGuild(id) {
 	const { guild } = await getGuild(id);
 
-	return (await guild.channels.fetch()).filter(x => x.isTextBased()); 
+	const channels = (await guild.channels.fetch()).filter(x => x.isTextBased());
+
+	return {
+		channels,
+		threads: Array.from((await channels.first().threads.fetch()).threads.values())
+	};
 }
+
+const commandsList = [{
+	name: 'channelinfo',
+	description: 'Get Channel informations for a specific period',
+	options: [
+		{
+			name: 'channel',
+			type: ApplicationCommandOptionType.Channel,
+			description: 'Channel',
+		},
+		{
+			name: 'from',
+			type: ApplicationCommandOptionType.String,
+			description: 'From (date)',
+		},
+		{
+			name: 'to',
+			type: ApplicationCommandOptionType.String,
+			description: 'To (date)',
+		}
+	],
+	defaultMemberPermissions: PermissionsBitField.Flags.Administrator,
+}];
 
 // START !
 client.once(Events.ClientReady, async(c) => {
 	console.log(`Ready! Logged in as ${c.user.tag}`);
+
+	try {
+		client.application?.commands.set(commandsList)
+	} catch(e) {
+		console.error(e);
+	}
 
 	for(const guildName in guilds) {
 		// Create guild specific directory if needed
@@ -39,9 +77,8 @@ client.once(Events.ClientReady, async(c) => {
 		} catch { /* Already exists */ }
 
 		// Persist channels list
-		const channels = await getTextChannelsForGuild(guilds[guildName]);
+		const { channels, threads } = await getTextChannelsForGuild(guilds[guildName]);
 		const reducedChannels = channels.map(x => ({ id: x.id, name: x.name }));
-		const threads = Array.from((await channels.first().threads.fetch()).threads.values());
 		for(const thread of threads) {
 			reducedChannels.push({ id: thread.id, name: thread.name });
 		}
@@ -170,6 +207,52 @@ client.once(Events.ClientReady, async(c) => {
 			}
 
 			await persist();
+		}
+	}
+});
+
+async function channelInfo(interaction) {
+	await interaction.deferReply();
+
+	const channel = interaction.options.getChannel('channel');
+
+	const fromStr = interaction.options.getString('from');
+	const from = fromStr === null ? new Date(2001, 0, 1) : new Date(interaction.options.getString('from'));
+
+	const toStr = interaction.options.getString('to');
+	const to = toStr === null ? new Date(Date.now()) : new Date(interaction.options.getString('to'));
+
+	let messages = [];
+	let messagesCacheFile = `data/${interaction.guildId}/messages-${channel.id}.json`
+	try {
+		const messagesListStr = await readFile(messagesCacheFile, 'utf-8');
+		messages = JSON.parse(messagesListStr);
+	} catch(e) { console.error(e); /* Do not exists: default value */ }
+
+	const filteredMessages = messages.filter(x => from.getTime() <= x.createdTimestamp && x.createdTimestamp <= to.getTime());
+
+	const exampleEmbed = new EmbedBuilder()
+		.setColor(0x0099FF)
+		.setTitle(`#${channel.name}`)
+		.addFields(
+			{ name: 'From:', value: getDateFromDateTime(new Date(Math.min(...filteredMessages.map(x => x.createdTimestamp)))) },
+			{ name: 'To:', value: getDateFromDateTime(new Date(Math.max(...filteredMessages.map(x => x.createdTimestamp)))) },
+		)
+		.addFields(
+			{ name: 'Messages:', value: filteredMessages.length.toString(), inline: true },
+			{ name: 'Users', value: Array.from(new Set(filteredMessages.map(x => x.author))).length.toString(), inline: true },
+		)
+		.setTimestamp();
+
+	await interaction.editReply({ embeds: [exampleEmbed] });
+}
+
+client.on('interactionCreate',  async(interaction) => {
+	if(interaction.isCommand()) {
+		switch(interaction.commandName) {
+			case 'channelinfo':
+				await channelInfo(interaction);
+				break;
 		}
 	}
 });
