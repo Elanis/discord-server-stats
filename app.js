@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { ApplicationCommandOptionType, ChannelType, Client, EmbedBuilder, Events, GatewayIntentBits, PermissionsBitField } from 'discord.js';
+import { ApplicationCommandOptionType, AttachmentBuilder, ChannelType, Client, EmbedBuilder, Events, GatewayIntentBits, PermissionsBitField } from 'discord.js';
+import ChartJSImage from 'chart.js-image';
 
 import { guilds, botToken, minDate } from './config.js';
 
@@ -220,6 +221,10 @@ async function channelInfo(interaction) {
 
 	const channel = interaction.options.getChannel('channel');
 
+	if(channel === null) {
+		await interaction.reply({ content: 'Invalid channel !' });
+	}
+
 	const fromStr = interaction.options.getString('from');
 	const from = fromStr === null ? new Date(2001, 0, 1) : new Date(interaction.options.getString('from'));
 
@@ -266,9 +271,66 @@ async function channelInfo(interaction) {
 
 	topUsers.sort((a, b) => b.amount - a.amount);
 
-	const exampleEmbed = new EmbedBuilder()
+	const minDate = Math.min(...filteredMessages.map(x => x.createdTimestamp));
+	const maxDate = Math.max(...filteredMessages.map(x => x.createdTimestamp));
+	const dates = [];
+	for(let date = minDate; date <= maxDate; date += 24 * 60 * 60 * 1000) {
+		dates.push(
+			getDateFromDateTime(new Date(date))
+		);
+	}
+
+	const chart = ChartJSImage().chart({
+		"type": "line",
+		"data": {
+			"labels": dates,
+			"datasets": [
+				{
+					"label": "Messages per day",
+					"borderColor": "rgb(255,+99,+132)",
+					"backgroundColor": "rgba(255,+99,+132,+.5)",
+					"data": dates.map(day => filteredMessages.filter(x => getDateFromDateTime(new Date(x.createdTimestamp)) === day).length),
+				}
+			]
+		},
+		"options": {
+			"title": {
+				"display": false,
+				"text": "Messages per day"
+			},
+			"scales": {
+				"xAxes": [
+					{
+						"scaleLabel": {
+							"display": false,
+							"labelString": "Day"
+						}
+					}
+				],
+				"yAxes": [
+					{
+						"stacked": true,
+						"scaleLabel": {
+							"display": true,
+							"labelString": "Messages"
+						}
+					}
+				]
+			}
+		}
+	}) // Line chart
+	.backgroundColor('white')
+	.width(400 + dates.length * 4)
+	.height(300); // 300px
+
+	const fileName = `${interaction.guildId}-${channel.id}.png`;
+
+	const file = new AttachmentBuilder(await chart.toBuffer(), { name: fileName });
+
+	const messageEmbed = new EmbedBuilder()
 		.setColor(0x0099FF)
-		.setTitle(`#${channel.name}`)
+		.setTitle(`<#${channel.id}>`)
+		.setImage('attachment://' + fileName)
 		.addFields(
 			{ name: 'From:', value: getDateFromDateTime(new Date(Math.min(...filteredMessages.map(x => x.createdTimestamp)))) },
 			{ name: 'To:', value: getDateFromDateTime(new Date(Math.max(...filteredMessages.map(x => x.createdTimestamp)))) },
@@ -280,7 +342,7 @@ async function channelInfo(interaction) {
 		)
 		.setTimestamp();
 
-	await interaction.editReply({ embeds: [exampleEmbed] });
+	await interaction.editReply({ embeds: [messageEmbed], files: [file] });
 }
 
 client.on('interactionCreate',  async(interaction) => {
