@@ -59,11 +59,20 @@ function getMinMaxDatesFromMessageList(messages) {
 
 function getDatesListFromMessageList(messages) {
 	const { minDate, maxDate } = getMinMaxDatesFromMessageList(messages);
-	const dates = [];
+	let dates = [];
 	for(let date = minDate; date <= maxDate; date += 24 * 60 * 60 * 1000) {
 		dates.push(
 			getDateFromDateTime(new Date(date))
 		);
+	}
+
+	if(dates.length > 45) {
+		dates = Array.from(new Set(dates.map(x => {
+			const items = x.split('-');
+			items.pop();
+
+			return items.join('-')
+		})));
 	}
 
 	return dates;
@@ -78,10 +87,10 @@ function getChannelInfoMessagesPerDayChart(filteredMessages) {
 			"labels": dates,
 			"datasets": [
 				{
-					"label": "Messages per day",
+					"label": "",
 					"borderColor": "rgb(255,+99,+132)",
 					"backgroundColor": "rgba(255,+99,+132,+.5)",
-					"data": dates.map(day => filteredMessages.filter(x => getDateFromDateTime(new Date(x.createdTimestamp)) === day).length),
+					"data": dates.map(day => filteredMessages.filter(x => getDateFromDateTime(new Date(x.createdTimestamp)).startsWith(day)).length),
 				}
 			]
 		},
@@ -120,10 +129,10 @@ function getChannelInfoMessagesPerDayChart(filteredMessages) {
 
 function getChannelInfoUserMessagesPerDayChart(filteredMessages, topUsers) {
 	const dates = getDatesListFromMessageList(filteredMessages);
-	const colors = ['#1abc9c', '#f1c40f', '#2ecc71', '#e67e22', '#3498db', '#e74c3c', '#9b59b6', '#34495e', '#95a5a6', '#e84393'];
+	const colors = ['#1abc9c', '#f1c40f', '#130f40', '#e67e22', '#3498db', '#e74c3c', '#9b59b6', '#34495e', '#95a5a6', '#e84393'];
 	
 	const chart = ChartJSImage().chart({
-		"type": "line",
+		"type": "bar",
 		"data": {
 			"labels": dates,
 			"datasets": 
@@ -132,7 +141,7 @@ function getChannelInfoUserMessagesPerDayChart(filteredMessages, topUsers) {
 					"borderColor": colors[index],
 					"backgroundColor": colors[index],
 					data: dates.map(day => 
-						filteredMessages.filter(x => x.author === user.id && getDateFromDateTime(new Date(x.createdTimestamp)) === day).length
+						filteredMessages.filter(x => x.author === user.id && getDateFromDateTime(new Date(x.createdTimestamp)).startsWith(day)).length
 					),
 				}))
 		},
@@ -152,7 +161,6 @@ function getChannelInfoUserMessagesPerDayChart(filteredMessages, topUsers) {
 				],
 				"yAxes": [
 					{
-						"stacked": true,
 						"scaleLabel": {
 							"display": true,
 							"labelString": "Messages"
@@ -163,8 +171,8 @@ function getChannelInfoUserMessagesPerDayChart(filteredMessages, topUsers) {
 		}
 	}) // Line chart
 	.backgroundColor('white')
-	.width(400 + dates.length * 4)
-	.height(300); // 300px
+	.width(500 + dates.length * 10)
+	.height(500);
 
 	return chart;
 }
