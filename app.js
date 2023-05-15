@@ -3,6 +3,7 @@ import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { botToken } from './config.js';
 
 import { channelInfoCommand, channelInfoCommandHandler } from './channelInfo.js';
+import { userInfoCommand, userInfoCommandHandler } from './userInfo.js';
 import { initialLoad } from './initialLoad.js';
 
 const client = new Client({ intents: [
@@ -13,7 +14,8 @@ const client = new Client({ intents: [
 ] });
 
 const commandsList = [
-	channelInfoCommand
+	channelInfoCommand,
+	userInfoCommand
 ];
 
 client.once(Events.ClientReady, async(c) => {
@@ -33,6 +35,9 @@ client.on('interactionCreate',  async(interaction) => {
 		switch(interaction.commandName) {
 			case 'channelinfo':
 				await channelInfoCommandHandler(interaction);
+				break;
+			case 'userinfo':
+				await userInfoCommandHandler(interaction, client);
 				break;
 		}
 	}
