@@ -140,7 +140,7 @@ export async function userInfoCommandHandler(interaction, client) {
 	const user = interaction.options.getUser('user');
 
 	if(user === null) {
-		await interaction.editReply({ content: 'Invalid user !' });
+		return await interaction.editReply({ content: 'Invalid user !' });
 	}
 
 	const fromStr = interaction.options.getString('from');

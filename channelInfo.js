@@ -109,7 +109,7 @@ export async function channelInfoCommandHandler(interaction) {
 	const channel = interaction.options.getChannel('channel');
 
 	if(channel === null) {
-		await interaction.editReply({ content: 'Invalid channel !' });
+		return await interaction.editReply({ content: 'Invalid channel !' });
 	}
 
 	const fromStr = interaction.options.getString('from');

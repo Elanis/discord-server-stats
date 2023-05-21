@@ -31,15 +31,19 @@ client.once(Events.ClientReady, async(c) => {
 });
 
 client.on('interactionCreate',  async(interaction) => {
-	if(interaction.isCommand()) {
-		switch(interaction.commandName) {
-			case 'channelinfo':
-				await channelInfoCommandHandler(interaction);
-				break;
-			case 'userinfo':
-				await userInfoCommandHandler(interaction, client);
-				break;
+	try {
+		if(interaction.isCommand()) {
+			switch(interaction.commandName) {
+				case 'channelinfo':
+					await channelInfoCommandHandler(interaction);
+					break;
+				case 'userinfo':
+					await userInfoCommandHandler(interaction, client);
+					break;
+			}
 		}
+	} catch(e) {
+		console.error(e);
 	}
 });
 
