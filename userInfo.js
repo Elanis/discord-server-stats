@@ -2,21 +2,21 @@ import { readdir, readFile } from 'node:fs/promises';
 import { ApplicationCommandOptionType, AttachmentBuilder, EmbedBuilder, PermissionsBitField } from 'discord.js';
 import ChartJSImage from 'chart.js-image';
 
-import { getDateFromDateTime, getDatesListFromMessageList, getMinMaxDatesFromMessageList, getTextChannelsForGuild } from './helpers.js';
+import { getDateFromDateTime } from './helpers.js';
 
-export function getUserInfoMessagesPerDayChart(filteredMessages) {
-	const dates = getDatesListFromMessageList(filteredMessages);
+import { getTopChannelsForUser, getGlobalMetadataForUser } from './databaseHelpers.js';
 
+export function getUserInfoMessagesPerDayChart(globalMetaData) {
 	const chart = ChartJSImage().chart({
 		"type": "line",
 		"data": {
-			"labels": dates,
+			"labels": globalMetaData.dates.map(x => getDateFromDateTime(x.date)),
 			"datasets": [
 				{
 					"label": "",
 					"borderColor": "rgb(255,+99,+132)",
 					"backgroundColor": "rgba(255,+99,+132,+.5)",
-					"data": dates.map(day => filteredMessages.filter(x => getDateFromDateTime(new Date(x.createdTimestamp)).startsWith(day)).length),
+					"data": globalMetaData.dates.map(x => x.count),
 				}
 			]
 		},
@@ -47,28 +47,25 @@ export function getUserInfoMessagesPerDayChart(filteredMessages) {
 		}
 	}) // Line chart
 	.backgroundColor('white')
-	.width(400 + dates.length * 4)
+	.width(400 + globalMetaData.dates.length * 4)
 	.height(300); // 300px
 
 	return chart;
 }
 
-export function getUserInfoUserMessagesPerDayChart(filteredMessages, topChannels) {
-	const dates = getDatesListFromMessageList(filteredMessages);
+export function getUserInfoUserMessagesPerDayChart(topChannels) {
 	const colors = ['#1abc9c', '#f1c40f', '#130f40', '#e67e22', '#3498db', '#e74c3c', '#9b59b6', '#34495e', '#95a5a6', '#e84393'];
 	
 	const chart = ChartJSImage().chart({
 		"type": "bar",
 		"data": {
-			"labels": dates,
+			"labels": topChannels[0].dates.map(x => getDateFromDateTime(x.date)),
 			"datasets": 
 				topChannels.map((channel, index) => ({
 					label: channel.name,
 					"borderColor": colors[index],
 					"backgroundColor": colors[index],
-					data: dates.map(day => 
-						filteredMessages.filter(x => x.channel === channel.id && getDateFromDateTime(new Date(x.createdTimestamp)).startsWith(day)).length
-					),
+					data: channel.dates.map(x => x.count),
 				}))
 		},
 		"options": {
@@ -97,44 +94,13 @@ export function getUserInfoUserMessagesPerDayChart(filteredMessages, topChannels
 		}
 	}) // Line chart
 	.backgroundColor('white')
-	.width(500 + dates.length * 10)
+	.width(500 + topChannels[0].dates.length * 10)
 	.height(500);
 
 	return chart;
 }
 
-function getTopChannelsFromMessages(messages, reducedChannels) {
-	const topChannelsObj = {};
-	for(const message of messages) {
-		if(!topChannelsObj[message.channel]) {
-			topChannelsObj[message.channel] = 0;
-		}
-
-		topChannelsObj[message.channel]++;
-	}
-
-	const topChannels = [];
-	for(const channelId in topChannelsObj) {
-		let channelName = reducedChannels.find(x => x.id === channelId);
-		if(channelName) {
-			channelName = channelName.name;
-		} else {
-			channelName = '?';
-		}
-
-		topChannels.push({
-			id: channelId,
-			name: channelName,
-			amount: topChannelsObj[channelId],
-		})
-	}
-
-	topChannels.sort((a, b) => b.amount - a.amount);
-
-	return topChannels;
-}
-
-export async function userInfoCommandHandler(interaction, client) {
+export async function userInfoCommandHandler(interaction, client, pgClient) {
 	await interaction.deferReply();
 
 	const user = interaction.options.getUser('user');
@@ -149,53 +115,17 @@ export async function userInfoCommandHandler(interaction, client) {
 	const toStr = interaction.options.getString('to');
 	const to = toStr === null ? new Date(Date.now()) : new Date(interaction.options.getString('to'));
 
-	// Load messages
-	let filteredMessages = [];
-	const guildDir = `data/${interaction.guildId}`;
-	const files = await readdir(guildDir);
-	for(const file of files) {
-		if(!file.startsWith('messages-')) {
-			continue;
-		}
+	// Get data
+	const globalMetaData = await getGlobalMetadataForUser(pgClient, interaction.guildId, user.id, from, to);
+	const top10Channels = await getTopChannelsForUser(pgClient, interaction.guildId, user.id, 10, globalMetaData.min, globalMetaData.max);
 
-		const path = `${guildDir}/${file}`;
-		const channelId = file.split('-')[1].split('.')[0];
-
-		let messages = [];
-		try {
-			const messagesListStr = await readFile(path, 'utf-8');
-			messages = JSON.parse(messagesListStr);
-		} catch(e) { console.error(e); /* Do not exists: default value */ }
-
-		filteredMessages = [
-			...filteredMessages,
-			...messages.filter(x => 
-				from.getTime() <= x.createdTimestamp && x.createdTimestamp <= to.getTime() &&
-				x.author === user.id
-			).map(x => ({ ...x, channel: channelId }))
-		];
-	}
-
-	// Get channels list
-	const { channels, threads } = await getTextChannelsForGuild(client, interaction.guildId);
-	const reducedChannels = channels.map(x => ({ id: x.id, name: x.name }));
-	for(const thread of threads) {
-		reducedChannels.push({ id: thread.id, name: thread.name });
-	}
-
-	// Process messages
-	const topChannels = getTopChannelsFromMessages(filteredMessages, reducedChannels);
-	const top10Channels = topChannels.filter((x, i) => i < 10);
-
-	const globalChart = getUserInfoMessagesPerDayChart(filteredMessages);
+	const globalChart = getUserInfoMessagesPerDayChart(globalMetaData);
 	const globalFileName = `${interaction.guildId}-${user.id}-global.png`;
 	const globalFile = new AttachmentBuilder(await globalChart.toBuffer(), { name: globalFileName });
 
-	const channelsChart = getUserInfoUserMessagesPerDayChart(filteredMessages, top10Channels);
+	const channelsChart = getUserInfoUserMessagesPerDayChart(top10Channels);
 	const channelsFileName = `${interaction.guildId}-${user.id}-channels.png`;
 	const channelsFile = new AttachmentBuilder(await channelsChart.toBuffer(), { name: channelsFileName });
-
-	const { minDate, maxDate } = getMinMaxDatesFromMessageList(filteredMessages);
 
 	const url = `https://discord.com/users/${user.id}`;
 	const messageEmbeds = [
@@ -205,12 +135,12 @@ export async function userInfoCommandHandler(interaction, client) {
 			.setTitle(`@${user.username}`)
 			.setImage('attachment://' + globalFileName)
 			.addFields(
-				{ name: 'From:', value: getDateFromDateTime(new Date(minDate)) },
-				{ name: 'To:', value: getDateFromDateTime(new Date(maxDate)) },
+				{ name: 'From:', value: getDateFromDateTime(globalMetaData.min) },
+				{ name: 'To:', value: getDateFromDateTime(globalMetaData.max) },
 			)
 			.addFields(
-				{ name: 'Messages:', value: filteredMessages.length.toString(), inline: true },
-				{ name: 'Top Channels', value: '```\n' + topChannels.filter((x, i) => i < 10).map((x, i) => `#${i + 1} - ${x.name} - ${x.amount} messages`).join('\n') + '\n```' }
+				{ name: 'Messages:', value: globalMetaData.count, inline: true },
+				{ name: 'Top Channels', value: '```\n' + top10Channels.map((x, i) => `#${i + 1} - ${x.name} - ${x.count} messages`).join('\n') + '\n```' }
 			)
 			.setTimestamp(),
 		new EmbedBuilder()

@@ -1,6 +1,8 @@
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 
-import { botToken } from './config.js';
+import pg from 'pg';
+
+import { botToken, connectionString } from './config.js';
 
 import { channelInfoCommand, channelInfoCommandHandler } from './channelInfo.js';
 import { userInfoCommand, userInfoCommandHandler } from './userInfo.js';
@@ -12,6 +14,9 @@ const client = new Client({ intents: [
 	GatewayIntentBits.GuildMessages,
 	GatewayIntentBits.MessageContent,
 ] });
+
+const pgClient = new pg.Client(connectionString);
+await pgClient.connect();
 
 const commandsList = [
 	channelInfoCommand,
@@ -27,7 +32,12 @@ client.once(Events.ClientReady, async(c) => {
 		console.error(e);
 	}
 
-	await initialLoad(client);
+
+	const executeLoad = async() => {
+		await initialLoad(client, pgClient);
+		setTimeout(executeLoad, 60 * 60 * 1000);
+	};
+	executeLoad();
 });
 
 client.on('interactionCreate',  async(interaction) => {
@@ -35,10 +45,10 @@ client.on('interactionCreate',  async(interaction) => {
 		if(interaction.isCommand()) {
 			switch(interaction.commandName) {
 				case 'channelinfo':
-					await channelInfoCommandHandler(interaction);
+					await channelInfoCommandHandler(interaction, pgClient);
 					break;
 				case 'userinfo':
-					await userInfoCommandHandler(interaction, client);
+					await userInfoCommandHandler(interaction, client, pgClient);
 					break;
 			}
 		}

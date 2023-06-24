@@ -2,8 +2,6 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 
 import { guilds, minDate } from './config.js';
 
-
-
 for(const guildName in guilds) {
 	const dataDir = `data/${guilds[guildName]}`;
 

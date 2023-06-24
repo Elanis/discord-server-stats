@@ -6,14 +6,23 @@ import { guilds, minDate } from './config.js';
 
 import { getTextChannelsForGuild, sleep } from './helpers.js';
 
-export async function initialLoad(client) {
-	for(const guildName in guilds) {
-		// Create guild specific directory if needed
-		const guildDir = `data/${guilds[guildName]}/`;
-		try {
-			await mkdir(guildDir);
-		} catch { /* Already exists */ }
+async function syncChannelListToDb(channels, pgClient, guild) {
+	const dbChannels = (await pgClient.query('SELECT * FROM public.channels')).rows;
+	for(const channel of channels) {
+		if(dbChannels.find(x => x.id === channel.id && x.name === channel.name)) {
+			continue;
+		}
+		if(dbChannels.find(x => x.id === channel.id)) {
+			await pgClient.query(`UPDATE public.channels SET name = $2 WHERE id = $1 AND guild = $3`, [channel.id, channel.name, guild]);
+			continue;
+		}
 
+		await pgClient.query(`INSERT INTO public.channels(id, name, guild) VALUES ($1, $2, $3)`, [channel.id, channel.name, guild]);
+	}
+}
+
+export async function initialLoad(client, pgClient) {
+	for(const guildName in guilds) {
 		// Persist channels list
 		const { channels, threads } = await getTextChannelsForGuild(client, guilds[guildName]);
 		const reducedChannels = channels.map(x => ({ id: x.id, name: x.name }));
@@ -21,51 +30,27 @@ export async function initialLoad(client) {
 			reducedChannels.push({ id: thread.id, name: thread.name });
 		}
 
-		await writeFile(`${guildDir}/channels.json`, JSON.stringify(reducedChannels, null, 4));
+		await syncChannelListToDb(reducedChannels, pgClient, guilds[guildName]);
 
 		// Load users cache
-		let users = {};
-		const userCacheFile = `${guildDir}/users.json`;
-		try {
-			const usersListStr = await readFile(userCacheFile, 'utf-8');
-			users = JSON.parse(usersListStr);
-		} catch(e) { /* Do not exists: default value */ }
+		let users = (await pgClient.query('SELECT * FROM users')).rows;
 
+		// Channels list for loop
 		let channelsList = Array.from(channels.values());
-
 		for(const thread of threads) {
 			channelsList.push(thread);
 		}
 
 		for(let channel of channelsList) {
-
 			if(!channel.permissionsFor(client.user).has([PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory])) {
 				console.log(`Skipping ${channel.name}, reason: no permissions to read`);
 				continue;
 			}
 
 			// Load messages cache
-			let messages = [];
-			let messagesCacheFile = `${guildDir}/messages-${channel.id}.json`
-			try {
-				const messagesListStr = await readFile(messagesCacheFile, 'utf-8');
-				messages = JSON.parse(messagesListStr);
-			} catch(e) { /* Do not exists: default value */ }
-
-			async function persist() {
-				console.log('Channel: ' + channel.name);
-				console.log('Messages: ' + messages.length);
-				console.log('From: ' + new Date(messages[messages.length - 1].createdTimestamp));
-				console.log('To: ' + new Date(messages[0].createdTimestamp));
-
-				console.log('Users: ' + Object.keys(users).length);
-
-				await writeFile(messagesCacheFile, JSON.stringify(messages, null, 4));
-				await writeFile(userCacheFile, JSON.stringify(users, null, 4));
-			}
+			const messages = (await pgClient.query('SELECT id FROM public.messages WHERE channel = $1', [channel.id])).rows;
 
 			// Get messages
-			let iterator = 0;
 			let beforeMode = true;
 			let shouldQuit = false;
 			while(!shouldQuit) {
@@ -95,14 +80,6 @@ export async function initialLoad(client) {
 
 				let added = false;
 				for(let message of fetchedMessages) {
-					const convertedMessage = {
-						id: message.id,
-						createdTimestamp: message.createdTimestamp,
-						type: message.type,
-						content: message.content,
-						author: message.author.id,
-					};
-
 					if(messages.find(x => x.id === message.id)) {
 						continue;
 					}
@@ -110,24 +87,33 @@ export async function initialLoad(client) {
 					added = true;
 
 					if(beforeMode) {
-						messages.push(convertedMessage);
+						messages.push({ id: message.id });
 					} else {
-						messages.unshift(convertedMessage);
+						messages.unshift({ id: message.id });
 					}
 
-					if(!users[message.author.id]) {
-						users[message.author.id] = {
-							bot: message.author.bot,
-							system: message.author.system,
-							username: message.author.username,
-							discriminator: message.author.discriminator,
-						};
+					if(!users.find(x => x.id === message.author.id)) {
+						await pgClient.query(`INSERT INTO public.users(id, bot, system, username, discriminator) 
+							VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`,
+							[message.author.id, message.author.bot, message.author.system, message.author.username, message.author.discriminator]);
+					}
+					if(users.find(x => x.id === message.author.id && 
+						(x.name !== message.author.username || x.discriminator !== message.author.discriminator)
+					)) {
+						await pgClient.query('UPDATE public.users SET username = $1, discriminator = $2 WHERE id = $3',
+							[message.author.username, message.author.discriminator, message.author.id]
+						);
 					}
 
 					if(message.createdTimestamp < minDate.getTime()) {
 						beforeMode = false;
 						break;
 					}
+
+					await pgClient.query(`INSERT INTO public.messages(id, "createdTimestamp", type, content, author, channel, guild)
+						VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+						[message.id, message.createdTimestamp, message.type, message.content, message.author.id, channel.id, guilds[guildName]]
+					);
 				}
 
 				if(!added && beforeMode) {
@@ -136,15 +122,12 @@ export async function initialLoad(client) {
 					shouldQuit = true;
 				}
 
-				if(++iterator === 10) {
-					await persist();
-					iterator = 0;
-				}
-
 				await sleep(2000);
 			}
 
-			await persist();
+			console.log(`${channel.name} is up to date !`);
 		}
+
+		console.log(`${guildName} is up to date !`);
 	}
 }
