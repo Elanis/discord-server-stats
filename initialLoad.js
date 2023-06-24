@@ -48,7 +48,7 @@ export async function initialLoad(client, pgClient) {
 			}
 
 			// Load messages cache
-			const messages = (await pgClient.query('SELECT id FROM public.messages WHERE channel = $1', [channel.id])).rows;
+			const messages = (await pgClient.query('SELECT id FROM public.messages WHERE channel = $1 ORDER BY id::bigint DESC', [channel.id])).rows;
 
 			// Get messages
 			let beforeMode = true;
@@ -94,7 +94,7 @@ export async function initialLoad(client, pgClient) {
 
 					if(!users.find(x => x.id === message.author.id)) {
 						await pgClient.query(`INSERT INTO public.users(id, bot, system, username, discriminator) 
-							VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`,
+							VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`,
 							[message.author.id, message.author.bot, message.author.system, message.author.username, message.author.discriminator]);
 					}
 					if(users.find(x => x.id === message.author.id && 
