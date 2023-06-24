@@ -48,7 +48,7 @@ jobs:
         uses: docker/build-push-action@v4.0.0
         with:
           push: true
-          tags: ghcr.io/dysnomia-studio/discord-server-stats:${{github.ref_name}}
+          tags: ghcr.io/elanis/discord-server-stats:${{github.ref_name}}
           build-args: |
             NPM_TOKEN=${{secrets.GITHUB_TOKEN}}  
   
@@ -69,6 +69,6 @@ jobs:
         uses: docker/build-push-action@v4.0.0
         with:
           push: true
-          tags: ghcr.io/dysnomia-studio/discord-server-stats:${{ github.head_ref || github.ref_name }} 
+          tags: ghcr.io/elanis/discord-server-stats:${{ github.head_ref || github.ref_name }} 
           build-args: |
             NPM_TOKEN=${{secrets.GITHUB_TOKEN}}  
