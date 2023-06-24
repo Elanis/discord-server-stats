@@ -20,6 +20,8 @@ function reduceDates(dates) {
 			count += parseInt(date.count, 10);
 		}
 
+		filteredDates.push({ date: lastDate, count });
+
 		dates = filteredDates;
 	}
 
@@ -41,6 +43,8 @@ function reduceDates(dates) {
 
 			count += parseInt(date.count, 10);
 		}
+
+		filteredDates.push({ date: lastDate, count });
 
 		dates = filteredDates;
 	}
