@@ -70,10 +70,12 @@ export async function initialLoad(client, pgClient) {
 				}
 
 				if(fetchedMessages.length === 0) {
-					fetchedMessages = Array.from((await channel.messages.fetch({
-						limit: 100,
-						before: messages[Math.round(Math.random() * messages.length)].id
-					})).values()); // We get random messages so we can fix gaps in db without spamming Discord every single time
+					if(messages.length > 0) {
+						fetchedMessages = Array.from((await channel.messages.fetch({
+							limit: 100,
+							before: messages[Math.round(Math.random() * messages.length)].id
+						})).values()); // We get random messages so we can fix gaps in db without spamming Discord every single time
+					}
 
 					if(fetchedMessages.length === 0) {
 						if(beforeMode) {
