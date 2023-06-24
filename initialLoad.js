@@ -64,18 +64,25 @@ export async function initialLoad(client, pgClient) {
 					}
 				}
 
-				const fetchedMessages = Array.from((await channel.messages.fetch(options)).values());
+				let fetchedMessages = Array.from((await channel.messages.fetch(options)).values());
 				if(!beforeMode) {
 					fetchedMessages.reverse();
 				}
 
 				if(fetchedMessages.length === 0) {
-					if(beforeMode) {
-						beforeMode = false;
-						continue;
-					}
+					fetchedMessages = Array.from((await channel.messages.fetch({
+						limit: 100,
+						before: messages[Math.round(Math.random() * messages.length)].id
+					})).values()); // We get random messages so we can fix gaps in db without spamming Discord every single time
 
-					break;
+					if(fetchedMessages.length === 0) {
+						if(beforeMode) {
+							beforeMode = false;
+							continue;
+						}
+
+						break;
+					}
 				}
 
 				let added = false;
