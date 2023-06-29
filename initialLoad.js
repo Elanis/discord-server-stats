@@ -53,20 +53,18 @@ export async function initialLoad(client, pgClient) {
 				continue;
 			}
 
-			// Load messages cache
-			const messages = (await pgClient.query('SELECT id FROM public.messages WHERE channel = $1 ORDER BY id::bigint DESC', [channel.id])).rows;
-
 			// Get messages
 			let beforeMode = true;
 			let shouldQuit = false;
 			while(!shouldQuit) {
 				let options = { limit: 100 };
 
+				const messages = (await pgClient.query('SELECT id FROM public.messages WHERE channel = $1 ORDER BY id::bigint DESC', [channel.id])).rows;
 				if(messages.length > 0) {
 					if(beforeMode) {
-						options['before'] = Math.min(...messages.map(x => x.id));
+						options['before'] = messages[messages.length - 1].id;
 					} else {
-						options['after'] = Math.max(...messages.map(x => x.id));
+						options['after'] = messages[0].id;
 					}
 				}
 
