@@ -11,14 +11,11 @@ export async function sleep(ms) {
 }
 
 export async function getGuild(client, id) {
-	const oauthGuild = (await client.guilds.fetch(x => x.id === id)).first();
-	const guild = await oauthGuild.fetch();
-
-	return { oauthGuild, guild };
+	return await client.guilds.fetch(id);
 }
 
 export async function getTextChannelsForGuild(client, id) {
-	const { guild } = await getGuild(client, id);
+	const guild = await getGuild(client, id);
 
 	const channels = (await guild.channels.fetch()).filter(x => x.isTextBased());
 
