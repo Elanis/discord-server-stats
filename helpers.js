@@ -27,3 +27,5 @@ export async function getTextChannelsForGuild(client, id) {
 		threads: Array.from((await channels.first().threads.fetch()).threads.values())
 	};
 }
+
+export function logWithTime(...args) { return console.log((new Date().toISOString()), ...args); };

@@ -4,7 +4,7 @@ import ChartJSImage from 'chart.js-image';
 
 import { guilds, minDate } from './config.js';
 
-import { getTextChannelsForGuild, sleep } from './helpers.js';
+import { getTextChannelsForGuild, logWithTime, sleep } from './helpers.js';
 
 async function syncChannelListToDb(channels, pgClient, guild) {
 	const dbChannels = (await pgClient.query('SELECT * FROM public.channels')).rows;
@@ -23,6 +23,8 @@ async function syncChannelListToDb(channels, pgClient, guild) {
 
 export async function initialLoad(client, pgClient) {
 	for(const guildName in guilds) {
+		logWithTime(`Loading data for server "${guildName}"`);
+
 		// Persist channels list
 		const { channels, threads } = await getTextChannelsForGuild(client, guilds[guildName]);
 		const reducedChannels = channels.map(x => ({ id: x.id, name: x.name }));
@@ -31,6 +33,8 @@ export async function initialLoad(client, pgClient) {
 		}
 
 		await syncChannelListToDb(reducedChannels, pgClient, guilds[guildName]);
+
+		logWithTime(`Loaded "${reducedChannels.length} channels"`);
 
 		// Load users cache
 		let users = (await pgClient.query('SELECT * FROM users')).rows;
@@ -41,9 +45,11 @@ export async function initialLoad(client, pgClient) {
 			channelsList.push(thread);
 		}
 
+		logWithTime(`Loaded "${users.length} users"`);
+
 		for(let channel of channelsList) {
 			if(!channel.permissionsFor(client.user).has([PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory])) {
-				console.log(`Skipping ${channel.name}, reason: no permissions to read`);
+				logWithTime(`Skipping ${channel.name}, reason: no permissions to read`);
 				continue;
 			}
 
@@ -134,9 +140,9 @@ export async function initialLoad(client, pgClient) {
 				await sleep(2000);
 			}
 
-			console.log(`${channel.name} is up to date !`);
+			logWithTime(`${channel.name} is up to date !`);
 		}
 
-		console.log(`${guildName} is up to date !`);
+		logWithTime(`${guildName} is up to date !`);
 	}
 }
