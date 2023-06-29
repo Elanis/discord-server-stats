@@ -58,9 +58,9 @@ export async function initialLoad(client, pgClient) {
 
 				if(messages.length > 0) {
 					if(beforeMode) {
-						options['before'] = messages[messages.length - 1].id;
+						options['before'] = Math.min(...messages.map(x => x.id));
 					} else {
-						options['after'] = messages[0].id;
+						options['after'] = Math.max(...messages.map(x => x.id));
 					}
 				}
 
