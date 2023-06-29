@@ -23,7 +23,7 @@ async function syncChannelListToDb(channels, pgClient, guild) {
 
 export async function initialLoad(client, pgClient) {
 	for(const guildName in guilds) {
-		logWithTime(`Loading data for server "${guildName}"`);
+		logWithTime(`Loading data for server "${guildName}" (${guilds[guildName]})`);
 
 		// Persist channels list
 		const { channels, threads } = await getTextChannelsForGuild(client, guilds[guildName]);
@@ -34,7 +34,7 @@ export async function initialLoad(client, pgClient) {
 
 		await syncChannelListToDb(reducedChannels, pgClient, guilds[guildName]);
 
-		logWithTime(`Loaded "${reducedChannels.length} channels"`);
+		logWithTime(`Loaded ${reducedChannels.length} channels`);
 
 		// Load users cache
 		let users = (await pgClient.query('SELECT * FROM users')).rows;
@@ -45,7 +45,7 @@ export async function initialLoad(client, pgClient) {
 			channelsList.push(thread);
 		}
 
-		logWithTime(`Loaded "${users.length} users"`);
+		logWithTime(`Loaded ${users.length} users`);
 
 		for(let channel of channelsList) {
 			if(!channel.permissionsFor(client.user).has([PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory])) {
@@ -140,9 +140,9 @@ export async function initialLoad(client, pgClient) {
 				await sleep(2000);
 			}
 
-			logWithTime(`${channel.name} is up to date !`);
+			logWithTime(`${channel.name} (${channel.id}) is up to date !`);
 		}
 
-		logWithTime(`${guildName} is up to date !`);
+		logWithTime(`${guildName} (${guilds[guildName]}) is up to date !`);
 	}
 }
