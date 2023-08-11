@@ -103,10 +103,10 @@ export function getChannelInfoUserMessagesPerDayChart(topUsers) {
 export async function channelInfoCommandHandler(interaction, pgClient) {
 	await interaction.deferReply();
 
-	const channel = interaction.options.getChannel('channel');
+	let channel = interaction.options.getChannel('channel');
 
 	if(channel === null) {
-		return await interaction.editReply({ content: 'Invalid channel !' });
+		channel = interaction.channel;
 	}
 
 	const fromStr = interaction.options.getString('from');

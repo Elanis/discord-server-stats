@@ -103,10 +103,10 @@ export function getUserInfoUserMessagesPerDayChart(topChannels) {
 export async function userInfoCommandHandler(interaction, client, pgClient) {
 	await interaction.deferReply();
 
-	const user = interaction.options.getUser('user');
+	let user = interaction.options.getUser('user');
 
 	if(user === null) {
-		return await interaction.editReply({ content: 'Invalid user !' });
+		user = interaction.user;
 	}
 
 	const fromStr = interaction.options.getString('from');
