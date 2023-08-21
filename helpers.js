@@ -18,10 +18,11 @@ export async function getTextChannelsForGuild(client, id) {
 	const guild = await getGuild(client, id);
 
 	const channels = (await guild.channels.fetch()).filter(x => x.isTextBased());
+	const threads = (await guild.channels.fetchActiveThreads()).threads.values();
 
 	return {
 		channels,
-		threads: Array.from((await channels.first().threads.fetch()).threads.values())
+		threads
 	};
 }
 
