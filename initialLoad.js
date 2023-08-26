@@ -28,22 +28,17 @@ export async function initialLoad(client, pgClient) {
 		// Persist channels list
 		const { channels, threads } = await getTextChannelsForGuild(client, guilds[guildName]);
 		const reducedChannels = channels.map(x => ({ id: x.id, name: x.name }));
+		const channelsList = Array.from(channels.values());
 		for(const thread of threads) {
 			reducedChannels.push({ id: thread.id, name: thread.name });
+			channelsList.push(thread);
 		}
-
 		await syncChannelListToDb(reducedChannels, pgClient, guilds[guildName]);
 
 		logWithTime(`Loaded ${reducedChannels.length} channels`);
 
 		// Load users cache
 		let users = (await pgClient.query('SELECT * FROM users')).rows;
-
-		// Channels list for loop
-		let channelsList = Array.from(channels.values());
-		for(const thread of threads) {
-			channelsList.push(thread);
-		}
 
 		logWithTime(`Loaded ${users.length} users`);
 
