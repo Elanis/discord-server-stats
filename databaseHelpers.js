@@ -212,3 +212,118 @@ export async function getGlobalMetadataForUser(pgClient, guild, user, from, to) 
 
 	return { dates, min, max, count };
 }
+
+/// SERVER INFO
+export async function getGlobalMetadataForServer(pgClient, guild, from, to) {
+	let dates = (await pgClient.query(`
+		SELECT to_timestamp("createdTimestamp" / 1000)::date as date, COUNT(*) as count
+		FROM public.messages
+		WHERE messages.guild = $1
+		AND "createdTimestamp" >= $2
+		AND "createdTimestamp" <= $3
+		GROUP BY 1
+		ORDER BY 1
+	`, [guild, from.getTime(), to.getTime()])).rows;
+
+	const { count, users } = (await pgClient.query(`
+		SELECT COUNT(*) as count, COUNT(DISTINCT author) as users
+		FROM public.messages
+		WHERE messages.guild = $1
+		AND "createdTimestamp" >= $2
+		AND "createdTimestamp" <= $3
+	`, [guild, from.getTime(), to.getTime()])).rows[0];
+
+	let min = '?';
+	let max = '?';
+	if(dates.length > 0) {
+		min = dates[0].date;
+		max = dates[dates.length - 1].date;
+
+		for(const date = new Date(min); date.getTime() < max.getTime(); date.setDate(date.getDate() + 1)) {
+			if(!dates.find(x => x.date.getTime() === date.getTime())) {
+				dates.push({ date: new Date(date), count: 0 });
+			}
+		}
+		dates = reduceDates(dates);
+	}
+
+	return { dates, min, max, count, users };
+}
+
+export async function getTopChannelsForServer(pgClient, guild, amount, from, toArg) {
+	const to = new Date(toArg);
+	to.setDate(to.getDate() + 1);
+
+	const topChannels = (await pgClient.query(`
+		SELECT channels.name as name, channels.id as channelid, COUNT(*) as count
+		FROM public.messages
+		INNER JOIN channels ON channels.id = channel
+		WHERE messages.guild = $1
+		AND "createdTimestamp" >= $3
+		AND "createdTimestamp" <= $4
+		GROUP BY 1, 2
+		ORDER BY 3 DESC
+		LIMIT $2
+	`, [guild, amount, from.getTime(), to.getTime()])).rows;
+
+	for(const channel of topChannels) {
+		channel.dates = (await pgClient.query(`
+			SELECT to_timestamp("createdTimestamp" / 1000)::date as date, COUNT(*) as count
+			FROM public.messages
+			WHERE messages.guild = $1
+			AND messages.channel = $2
+			AND "createdTimestamp" >= $3
+			AND "createdTimestamp" <= $4
+			GROUP BY 1
+			ORDER BY 1
+		`, [guild, channel.channelid, from.getTime(), to.getTime()])).rows;
+
+		for(const date = new Date(from); date.getTime() < to.getTime(); date.setDate(date.getDate() + 1)) {
+			if(!channel.dates.find(x => x.date.getTime() === date.getTime())) {
+				channel.dates.push({ date: new Date(date), count: 0 });
+			}
+		}
+		channel.dates = reduceDates(channel.dates);
+	}
+
+	return topChannels;
+}
+
+export async function getTopUsersForServer(pgClient, guild, amount, from, toArg) {
+	const to = new Date(toArg);
+	to.setDate(to.getDate() + 1);
+
+	const topUsers = (await pgClient.query(`
+		SELECT CONCAT(CONCAT(users.username, '#'), users.discriminator) as name, users.id as userid, COUNT(*) as count
+		FROM public.messages
+		INNER JOIN users ON users.id = author
+		WHERE messages.guild = $1
+		AND "createdTimestamp" >= $3
+		AND "createdTimestamp" <= $4
+		GROUP BY 1, 2
+		ORDER BY 3 DESC
+		LIMIT $2
+	`, [guild, amount, from.getTime(), to.getTime()])).rows;
+
+	for(const user of topUsers) {
+		user.dates = (await pgClient.query(`
+			SELECT to_timestamp("createdTimestamp" / 1000)::date as date, COUNT(*) as count
+			FROM public.messages
+			WHERE messages.guild = $1
+			AND messages.author = $2
+			AND "createdTimestamp" >= $3
+			AND "createdTimestamp" <= $4
+			GROUP BY 1
+			ORDER BY 1
+		`, [guild, user.userid, from.getTime(), to.getTime()])).rows;
+
+		for(const date = new Date(from); date.getTime() < to.getTime(); date.setDate(date.getDate() + 1)) {
+			if(!user.dates.find(x => x.date.getTime() === date.getTime())) {
+				user.dates.push({ date: new Date(date), count: 0 });
+			}
+		}
+		user.dates = reduceDates(user.dates);
+	}
+
+	return topUsers;
+}

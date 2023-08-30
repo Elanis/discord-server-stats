@@ -5,6 +5,7 @@ import pg from 'pg';
 import { botToken, connectionString } from './config.js';
 
 import { channelInfoCommand, channelInfoCommandHandler } from './channelInfo.js';
+import { serverInfoCommand, serverInfoCommandHandler } from './serverInfo.js';
 import { userInfoCommand, userInfoCommandHandler } from './userInfo.js';
 import { initialLoad } from './initialLoad.js';
 
@@ -20,6 +21,7 @@ await pgClient.connect();
 
 const commandsList = [
 	channelInfoCommand,
+	serverInfoCommand,
 	userInfoCommand
 ];
 
@@ -33,11 +35,11 @@ client.once(Events.ClientReady, async(c) => {
 	}
 
 
-	const executeLoad = async() => {
+	/*const executeLoad = async() => {
 		await initialLoad(client, pgClient);
 		setTimeout(executeLoad, 60 * 60 * 1000);
 	};
-	executeLoad();
+	executeLoad();*/
 });
 
 client.on('interactionCreate',  async(interaction) => {
@@ -46,6 +48,9 @@ client.on('interactionCreate',  async(interaction) => {
 			switch(interaction.commandName) {
 				case 'channelinfo':
 					await channelInfoCommandHandler(interaction, pgClient);
+					break;
+				case 'serverinfo':
+					await serverInfoCommandHandler(interaction, pgClient);
 					break;
 				case 'userinfo':
 					await userInfoCommandHandler(interaction, client, pgClient);

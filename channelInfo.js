@@ -1,104 +1,10 @@
-import { readFile } from 'node:fs/promises';
 import { ApplicationCommandOptionType, AttachmentBuilder, EmbedBuilder, PermissionsBitField } from 'discord.js';
 import ChartJSImage from 'chart.js-image';
 
 import { getDateFromDateTime } from './helpers.js';
 
 import { getTopUsersForChannel, getGlobalMetadataForChannel } from './databaseHelpers.js';
-
-export function getChannelInfoMessagesPerDayChart(globalMetaData) {
-	const chart = ChartJSImage().chart({
-		"type": "line",
-		"data": {
-			"labels": globalMetaData.dates.map(x => getDateFromDateTime(x.date)),
-			"datasets": [
-				{
-					"label": "",
-					"borderColor": "rgb(255,+99,+132)",
-					"backgroundColor": "rgba(255,+99,+132,+.5)",
-					"data": globalMetaData.dates.map(x => x.count),
-				}
-			]
-		},
-		"options": {
-			"title": {
-				"display": false,
-				"text": "Messages per day"
-			},
-			"scales": {
-				"xAxes": [
-					{
-						"scaleLabel": {
-							"display": false,
-							"labelString": "Day"
-						}
-					}
-				],
-				"yAxes": [
-					{
-						"stacked": true,
-						"scaleLabel": {
-							"display": true,
-							"labelString": "Messages"
-						}
-					}
-				]
-			}
-		}
-	}) // Line chart
-	.backgroundColor('white')
-	.width(400 + globalMetaData.dates.length * 4)
-	.height(300); // 300px
-
-	return chart;
-}
-
-export function getChannelInfoUserMessagesPerDayChart(topUsers) {
-	const colors = ['#1abc9c', '#f1c40f', '#130f40', '#e67e22', '#3498db', '#e74c3c', '#9b59b6', '#34495e', '#95a5a6', '#e84393'];
-	
-	const chart = ChartJSImage().chart({
-		"type": "bar",
-		"data": {
-			"labels": topUsers[0].dates.map(x => getDateFromDateTime(x.date)),
-			"datasets": 
-				topUsers.map((user, index) => ({
-					label: user.name,
-					"borderColor": colors[index],
-					"backgroundColor": colors[index],
-					data: user.dates.map(x => x.count),
-				}))
-		},
-		"options": {
-			"title": {
-				"display": false,
-				"text": "Messages per day"
-			},
-			"scales": {
-				"xAxes": [
-					{
-						"scaleLabel": {
-							"display": false,
-							"labelString": "Day"
-						}
-					}
-				],
-				"yAxes": [
-					{
-						"scaleLabel": {
-							"display": true,
-							"labelString": "Messages"
-						}
-					}
-				]
-			}
-		}
-	}) // Line chart
-	.backgroundColor('white')
-	.width(500 + topUsers[0].dates.length * 10)
-	.height(500);
-
-	return chart;
-}
+import { colors, getChart } from './getChart.js';
 
 export async function channelInfoCommandHandler(interaction, pgClient) {
 	await interaction.deferReply();
@@ -120,11 +26,31 @@ export async function channelInfoCommandHandler(interaction, pgClient) {
 	const top10Users = await getTopUsersForChannel(pgClient, interaction.guildId, channel.id, 10, globalMetaData.min, globalMetaData.max);
 	
 	// Get charts
-	const globalChart = getChannelInfoMessagesPerDayChart(globalMetaData);
+	const globalChart = getChart(
+		'line',
+		globalMetaData.dates.map(x => getDateFromDateTime(x.date)),
+		[
+			{
+				label: "",
+				borderColor: "rgb(255,+99,+132)",
+				backgroundColor: "rgba(255,+99,+132,+.5)",
+				data: globalMetaData.dates.map(x => x.count),
+			}
+		]
+	);
 	const globalFileName = `${interaction.guildId}-${channel.id}-global.png`;
 	const globalFile = new AttachmentBuilder(await globalChart.toBuffer(), { name: globalFileName });
 
-	const usersChart = getChannelInfoUserMessagesPerDayChart(top10Users);
+	const usersChart = getChart(
+		'bar',
+		top10Users[0].dates.map(x => getDateFromDateTime(x.date)),
+		top10Users.map((user, index) => ({
+			label: user.name,
+			borderColor: colors[index],
+			backgroundColor: colors[index],
+			data: user.dates.map(x => x.count),
+		}))
+	);
 	const usersFileName = `${interaction.guildId}-${channel.id}-users.png`;
 	const userFile = new AttachmentBuilder(await usersChart.toBuffer(), { name: usersFileName });
 
