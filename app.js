@@ -35,11 +35,11 @@ client.once(Events.ClientReady, async(c) => {
 	}
 
 
-	/*const executeLoad = async() => {
+	const executeLoad = async() => {
 		await initialLoad(client, pgClient);
 		setTimeout(executeLoad, 60 * 60 * 1000);
 	};
-	executeLoad();*/
+	executeLoad();
 });
 
 client.on('interactionCreate',  async(interaction) => {
