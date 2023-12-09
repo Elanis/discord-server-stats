@@ -1,6 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { PermissionsBitField } from 'discord.js';
-import ChartJSImage from 'chart.js-image';
 
 import { guilds, minDate } from './config.js';
 
@@ -9,10 +7,10 @@ import { getTextChannelsForGuild, logWithTime, sleep } from './helpers.js';
 async function syncChannelListToDb(channels, pgClient, guild) {
 	const dbChannels = (await pgClient.query('SELECT * FROM public.channels')).rows;
 	for(const channel of channels) {
-		if(dbChannels.find(x => x.id === channel.id && x.name === channel.name)) {
+		if(dbChannels.find((x) => x.id === channel.id && x.name === channel.name)) {
 			continue;
 		}
-		if(dbChannels.find(x => x.id === channel.id)) {
+		if(dbChannels.find((x) => x.id === channel.id)) {
 			await pgClient.query(`UPDATE public.channels SET name = $2 WHERE id = $1 AND guild = $3`, [channel.id, channel.name, guild]);
 			continue;
 		}
@@ -27,7 +25,7 @@ export async function initialLoad(client, pgClient) {
 
 		// Persist channels list
 		const { channels, threads } = await getTextChannelsForGuild(client, guilds[guildName]);
-		const reducedChannels = channels.map(x => ({ id: x.id, name: x.name }));
+		const reducedChannels = channels.map((x) => ({ id: x.id, name: x.name }));
 		const channelsList = Array.from(channels.values());
 		for(const thread of threads) {
 			reducedChannels.push({ id: thread.id, name: thread.name });
@@ -38,11 +36,11 @@ export async function initialLoad(client, pgClient) {
 		logWithTime(`Loaded ${reducedChannels.length} channels`);
 
 		// Load users cache
-		let users = (await pgClient.query('SELECT * FROM users')).rows;
+		const users = (await pgClient.query('SELECT * FROM users')).rows;
 
 		logWithTime(`Loaded ${users.length} users`);
 
-		for(let channel of channelsList) {
+		for(const channel of channelsList) {
 			if(!channel.permissionsFor(client.user).has([PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ReadMessageHistory])) {
 				logWithTime(`Skipping ${channel.name}, reason: no permissions to read`);
 				continue;
@@ -52,7 +50,7 @@ export async function initialLoad(client, pgClient) {
 			let beforeMode = true;
 			let shouldQuit = false;
 			while(!shouldQuit) {
-				let options = { limit: 100 };
+				const options = { limit: 100 };
 
 				const messages = (await pgClient.query('SELECT id FROM public.messages WHERE channel = $1 ORDER BY id::bigint DESC', [channel.id])).rows;
 				if(messages.length > 0) {
@@ -87,8 +85,8 @@ export async function initialLoad(client, pgClient) {
 				}
 
 				let added = false;
-				for(let message of fetchedMessages) {
-					if(messages.find(x => x.id === message.id)) {
+				for(const message of fetchedMessages) {
+					if(messages.find((x) => x.id === message.id)) {
 						continue;
 					}
 
@@ -100,12 +98,12 @@ export async function initialLoad(client, pgClient) {
 						messages.unshift({ id: message.id });
 					}
 
-					if(!users.find(x => x.id === message.author.id)) {
+					if(!users.find((x) => x.id === message.author.id)) {
 						await pgClient.query(`INSERT INTO public.users(id, bot, system, username, discriminator) 
 							VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`,
 							[message.author.id, message.author.bot, message.author.system, message.author.username, message.author.discriminator]);
 					}
-					if(users.find(x => x.id === message.author.id && 
+					if(users.find((x) => x.id === message.author.id && 
 						(x.name !== message.author.username || x.discriminator !== message.author.discriminator)
 					)) {
 						await pgClient.query('UPDATE public.users SET username = $1, discriminator = $2 WHERE id = $3',

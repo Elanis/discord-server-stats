@@ -1,5 +1,4 @@
 import { ApplicationCommandOptionType, AttachmentBuilder, EmbedBuilder, PermissionsBitField } from 'discord.js';
-import ChartJSImage from 'chart.js-image';
 
 import { getDateFromDateTime } from './helpers.js';
 
@@ -23,7 +22,7 @@ export async function serverInfoCommandHandler(interaction, pgClient) {
 	// Get charts
 	const globalChart = getChart(
 		'line',
-		globalMetaData.dates.map(x => getDateFromDateTime(x.date)),
+		globalMetaData.dates.map((x) => getDateFromDateTime(x.date)),
 		[
 			{
 				"label": "",
@@ -39,12 +38,12 @@ export async function serverInfoCommandHandler(interaction, pgClient) {
 
 	const usersChart = getChart(
 		'bar',
-		top10Users[0].dates.map(x => getDateFromDateTime(x.date)),
+		top10Users[0].dates.map((x) => getDateFromDateTime(x.date)),
 		top10Users.map((user, index) => ({
 			label: user.name,
 			borderColor: colors[index],
 			backgroundColor: colors[index],
-			data: user.dates.map(x => x.count),
+			data: user.dates.map((x) => x.count),
 		}))
 	);
 	const usersFileName = `${interaction.guildId}-users.png`;
@@ -52,12 +51,12 @@ export async function serverInfoCommandHandler(interaction, pgClient) {
 
 	const channelsChart = getChart(
 		'bar',
-		top10Channels[0].dates.map(x => getDateFromDateTime(x.date)),
+		top10Channels[0].dates.map((x) => getDateFromDateTime(x.date)),
 		top10Channels.map((channel, index) => ({
 			label: channel.name,
 			borderColor: colors[index],
 			backgroundColor: colors[index],
-			data: channel.dates.map(x => x.count),
+			data: channel.dates.map((x) => x.count),
 		}))
 	);
 	const channelsFileName = `${interaction.guildId}-channels.png`;

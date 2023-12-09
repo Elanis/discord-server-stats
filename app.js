@@ -2,7 +2,7 @@ import { Client, Events, GatewayIntentBits } from 'discord.js';
 
 import pg from 'pg';
 
-import { botToken, connectionString } from './config.js';
+import { botToken, connectionString, SYNC_INTERVAL } from './config.js';
 
 import { channelInfoCommand, channelInfoCommandHandler } from './channelInfo.js';
 import { serverInfoCommand, serverInfoCommandHandler } from './serverInfo.js';
@@ -37,7 +37,7 @@ client.once(Events.ClientReady, async(c) => {
 
 	const executeLoad = async() => {
 		await initialLoad(client, pgClient);
-		setTimeout(executeLoad, 60 * 60 * 1000);
+		setTimeout(executeLoad, SYNC_INTERVAL);
 	};
 	executeLoad();
 });

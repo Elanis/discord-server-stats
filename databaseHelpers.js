@@ -84,7 +84,7 @@ export async function getTopUsersForChannel(pgClient, guild, channel, amount, fr
 		`, [channel, guild, user.userid, from.getTime(), to.getTime()])).rows;
 
 		for(const date = new Date(from); date.getTime() < to.getTime(); date.setDate(date.getDate() + 1)) {
-			if(!user.dates.find(x => x.date.getTime() === date.getTime())) {
+			if(!user.dates.find((x) => x.date.getTime() === date.getTime())) {
 				user.dates.push({ date: new Date(date), count: 0 });
 			}
 		}
@@ -122,7 +122,7 @@ export async function getGlobalMetadataForChannel(pgClient, guild, channel, from
 		max = dates[dates.length - 1].date;
 
 		for(const date = new Date(min); date.getTime() < max.getTime(); date.setDate(date.getDate() + 1)) {
-			if(!dates.find(x => x.date.getTime() === date.getTime())) {
+			if(!dates.find((x) => x.date.getTime() === date.getTime())) {
 				dates.push({ date: new Date(date), count: 0 });
 			}
 		}
@@ -165,7 +165,7 @@ export async function getTopChannelsForUser(pgClient, guild, user, amount, from,
 		`, [user, guild, channel.channelid, from.getTime(), to.getTime()])).rows;
 
 		for(const date = new Date(from); date.getTime() < to.getTime(); date.setDate(date.getDate() + 1)) {
-			if(!channel.dates.find(x => x.date.getTime() === date.getTime())) {
+			if(!channel.dates.find((x) => x.date.getTime() === date.getTime())) {
 				channel.dates.push({ date: new Date(date), count: 0 });
 			}
 		}
@@ -203,7 +203,7 @@ export async function getGlobalMetadataForUser(pgClient, guild, user, from, to) 
 		max = dates[dates.length - 1].date;
 
 		for(const date = new Date(min); date.getTime() < max.getTime(); date.setDate(date.getDate() + 1)) {
-			if(!dates.find(x => x.date.getTime() === date.getTime())) {
+			if(!dates.find((x) => x.date.getTime() === date.getTime())) {
 				dates.push({ date: new Date(date), count: 0 });
 			}
 		}
@@ -240,7 +240,7 @@ export async function getGlobalMetadataForServer(pgClient, guild, from, to) {
 		max = dates[dates.length - 1].date;
 
 		for(const date = new Date(min); date.getTime() < max.getTime(); date.setDate(date.getDate() + 1)) {
-			if(!dates.find(x => x.date.getTime() === date.getTime())) {
+			if(!dates.find((x) => x.date.getTime() === date.getTime())) {
 				dates.push({ date: new Date(date), count: 0 });
 			}
 		}
@@ -279,7 +279,7 @@ export async function getTopChannelsForServer(pgClient, guild, amount, from, toA
 		`, [guild, channel.channelid, from.getTime(), to.getTime()])).rows;
 
 		for(const date = new Date(from); date.getTime() < to.getTime(); date.setDate(date.getDate() + 1)) {
-			if(!channel.dates.find(x => x.date.getTime() === date.getTime())) {
+			if(!channel.dates.find((x) => x.date.getTime() === date.getTime())) {
 				channel.dates.push({ date: new Date(date), count: 0 });
 			}
 		}
@@ -318,7 +318,7 @@ export async function getTopUsersForServer(pgClient, guild, amount, from, toArg)
 		`, [guild, user.userid, from.getTime(), to.getTime()])).rows;
 
 		for(const date = new Date(from); date.getTime() < to.getTime(); date.setDate(date.getDate() + 1)) {
-			if(!user.dates.find(x => x.date.getTime() === date.getTime())) {
+			if(!user.dates.find((x) => x.date.getTime() === date.getTime())) {
 				user.dates.push({ date: new Date(date), count: 0 });
 			}
 		}

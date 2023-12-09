@@ -1,5 +1,4 @@
 import { ApplicationCommandOptionType, AttachmentBuilder, EmbedBuilder, PermissionsBitField } from 'discord.js';
-import ChartJSImage from 'chart.js-image';
 
 import { getDateFromDateTime } from './helpers.js';
 
@@ -28,13 +27,13 @@ export async function channelInfoCommandHandler(interaction, pgClient) {
 	// Get charts
 	const globalChart = getChart(
 		'line',
-		globalMetaData.dates.map(x => getDateFromDateTime(x.date)),
+		globalMetaData.dates.map((x) => getDateFromDateTime(x.date)),
 		[
 			{
 				label: "",
 				borderColor: "rgb(255,+99,+132)",
 				backgroundColor: "rgba(255,+99,+132,+.5)",
-				data: globalMetaData.dates.map(x => x.count),
+				data: globalMetaData.dates.map((x) => x.count),
 			}
 		]
 	);
@@ -43,12 +42,12 @@ export async function channelInfoCommandHandler(interaction, pgClient) {
 
 	const usersChart = getChart(
 		'bar',
-		top10Users[0].dates.map(x => getDateFromDateTime(x.date)),
+		top10Users[0].dates.map((x) => getDateFromDateTime(x.date)),
 		top10Users.map((user, index) => ({
 			label: user.name,
 			borderColor: colors[index],
 			backgroundColor: colors[index],
-			data: user.dates.map(x => x.count),
+			data: user.dates.map((x) => x.count),
 		}))
 	);
 	const usersFileName = `${interaction.guildId}-${channel.id}-users.png`;

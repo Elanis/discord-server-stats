@@ -7,17 +7,17 @@ export function getDateFromDateTime(date) {
 }
 
 export async function sleep(ms) {
-	await new Promise((resolve, reject) => setTimeout(resolve, ms));
+	return new Promise((resolve, _reject) => setTimeout(resolve, ms));
 }
 
 export async function getGuild(client, id) {
-	return await client.guilds.fetch(id);
+	return client.guilds.fetch(id);
 }
 
 export async function getTextChannelsForGuild(client, id) {
 	const guild = await getGuild(client, id);
 
-	const channels = (await guild.channels.fetch()).filter(x => x.isTextBased());
+	const channels = (await guild.channels.fetch()).filter((x) => x.isTextBased());
 	const threads = (await guild.channels.fetchActiveThreads()).threads.values();
 
 	return {

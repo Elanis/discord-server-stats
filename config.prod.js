@@ -2,6 +2,7 @@ export const guilds = JSON.parse(process.env.SERVER_LIST); // "{\"Name\":\"SNOWF
 
 export const botToken = process.env.DISCORD_TOKEN;
 export const minDate = new Date(2015, 0, 1);
+export const SYNC_INTERVAL = 3600000; // 1 hour
 
 export const connectionString = {
 	user: process.env.PG_USER,
