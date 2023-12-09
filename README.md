@@ -1,2 +1,5 @@
+[![Reliability Rating](https://sonar.dysnomia.studio/api/project_badges/measure?project=discord-server-stats&metric=reliability_rating)](https://sonar.dysnomia.studio/dashboard?id=discord-server-stats) [![Maintainability Rating](https://sonar.dysnomia.studio/api/project_badges/measure?project=discord-server-stats&metric=sqale_rating)](https://sonar.dysnomia.studio/dashboard?id=discord-server-stats) [![Security Rating](https://sonar.dysnomia.studio/api/project_badges/measure?project=discord-server-stats&metric=security_rating)](https://sonar.dysnomia.studio/dashboard?id=discord-server-stats)  
+[![Duplicated Lines (%)](https://sonar.dysnomia.studio/api/project_badges/measure?project=discord-server-stats&metric=duplicated_lines_density)](https://sonar.dysnomia.studio/dashboard?id=discord-server-stats) [![Coverage](https://sonar.dysnomia.studio/api/project_badges/measure?project=discord-server-stats&metric=coverage)](https://sonar.dysnomia.studio/dashboard?id=discord-server-stats)
+
 # discord-server-stats
 A discord bot that will gather history in database to then being able to generate stats and graphs about channels or people.
