@@ -118,11 +118,9 @@ export async function initialLoad(client, pgClient) {
 						break;
 					}
 
-					const cleanContent = message.content.replaceAll('\u0000', '');
-
-					await pgClient.query(`INSERT INTO public.messages(id, "createdTimestamp", type, content, author, channel, guild)
+					await pgClient.query(`INSERT INTO public.messages(id, "createdTimestamp", type, content_length, author, channel, guild)
 						VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-						[message.id, message.createdTimestamp, message.type, cleanContent, message.author.id, channel.id, guilds[guildName]]
+						[message.id, message.createdTimestamp, message.type, message.content?.length ?? 0, message.author.id, channel.id, guilds[guildName]]
 					);
 				}
 

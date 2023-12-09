@@ -45,7 +45,7 @@ CREATE TABLE public.messages (
     id character varying NOT NULL,
     "createdTimestamp" bigint NOT NULL,
     type integer NOT NULL,
-    content character varying NOT NULL,
+    content_length integer NOT NULL,
     author character varying NOT NULL,
     channel character varying NOT NULL,
     guild character varying NOT NULL
