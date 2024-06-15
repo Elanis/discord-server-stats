@@ -60,7 +60,6 @@ jobs:
           cache: 'npm'
 
       - run: npm ci
-      - run: npm run build
 
       - name: Build & Push Docker image
         uses: docker/build-push-action@v5.4.0
