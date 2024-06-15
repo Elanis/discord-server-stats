@@ -3,7 +3,7 @@ import { ApplicationCommandOptionType, AttachmentBuilder, EmbedBuilder, Permissi
 import { getDateFromDateTime } from './helpers.js';
 
 import { getTopUsersForChannel, getGlobalMetadataForChannel } from './databaseHelpers.js';
-import { colors, getChart } from './getChart.js';
+import { getChart, getBarChart } from './getChart.js';
 
 export async function channelInfoCommandHandler(interaction, pgClient) {
 	await interaction.deferReply();
@@ -40,16 +40,7 @@ export async function channelInfoCommandHandler(interaction, pgClient) {
 	const globalFileName = `${interaction.guildId}-${channel.id}-global.png`;
 	const globalFile = new AttachmentBuilder(await globalChart.toBuffer(), { name: globalFileName });
 
-	const usersChart = getChart(
-		'bar',
-		top10Users[0].dates.map((x) => getDateFromDateTime(x.date)),
-		top10Users.map((user, index) => ({
-			label: user.name,
-			borderColor: colors[index],
-			backgroundColor: colors[index],
-			data: user.dates.map((x) => x.count),
-		}))
-	);
+	const usersChart = getBarChart(top10Users);
 	const usersFileName = `${interaction.guildId}-${channel.id}-users.png`;
 	const userFile = new AttachmentBuilder(await usersChart.toBuffer(), { name: usersFileName });
 

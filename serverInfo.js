@@ -3,7 +3,7 @@ import { ApplicationCommandOptionType, AttachmentBuilder, EmbedBuilder, Permissi
 import { getDateFromDateTime } from './helpers.js';
 
 import { getGlobalMetadataForServer, getTopChannelsForServer, getTopUsersForServer } from './databaseHelpers.js';
-import { colors, getChart } from './getChart.js';
+import { getChart, getBarChart } from './getChart.js';
 
 const ATTACHMENT_PREFIX = 'attachment://';
 
@@ -38,29 +38,11 @@ export async function serverInfoCommandHandler(interaction, pgClient) {
 	const globalFile = new AttachmentBuilder(await globalChart.toBuffer(), { name: globalFileName });
 
 
-	const usersChart = getChart(
-		'bar',
-		top10Users[0].dates.map((x) => getDateFromDateTime(x.date)),
-		top10Users.map((user, index) => ({
-			label: user.name,
-			borderColor: colors[index],
-			backgroundColor: colors[index],
-			data: user.dates.map((x) => x.count),
-		}))
-	);
+	const usersChart = getBarChart(top10Users);
 	const usersFileName = `${interaction.guildId}-users.png`;
 	const userFile = new AttachmentBuilder(await usersChart.toBuffer(), { name: usersFileName });
 
-	const channelsChart = getChart(
-		'bar',
-		top10Channels[0].dates.map((x) => getDateFromDateTime(x.date)),
-		top10Channels.map((channel, index) => ({
-			label: channel.name,
-			borderColor: colors[index],
-			backgroundColor: colors[index],
-			data: channel.dates.map((x) => x.count),
-		}))
-	);
+	const channelsChart = getBarChart(top10Channels);
 	const channelsFileName = `${interaction.guildId}-channels.png`;
 	const channelsFile = new AttachmentBuilder(await channelsChart.toBuffer(), { name: channelsFileName });
 
