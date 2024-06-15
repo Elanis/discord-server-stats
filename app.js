@@ -25,7 +25,7 @@ const commandsList = [
 	userInfoCommand
 ];
 
-client.once(Events.ClientReady, async(c) => {
+client.once(Events.ClientReady, (c) => {
 	console.log(`Ready! Logged in as ${c.user.tag}`);
 
 	try {

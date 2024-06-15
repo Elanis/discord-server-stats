@@ -5,6 +5,8 @@ import { getDateFromDateTime } from './helpers.js';
 import { getGlobalMetadataForServer, getTopChannelsForServer, getTopUsersForServer } from './databaseHelpers.js';
 import { colors, getChart } from './getChart.js';
 
+const ATTACHMENT_PREFIX = 'attachment://';
+
 export async function serverInfoCommandHandler(interaction, pgClient) {
 	await interaction.deferReply();
 
@@ -68,7 +70,7 @@ export async function serverInfoCommandHandler(interaction, pgClient) {
 			.setURL(url)
 			.setColor(0x0099FF)
 			.setTitle(interaction.guild.name)
-			.setImage('attachment://' + globalFileName)
+			.setImage(ATTACHMENT_PREFIX + globalFileName)
 			.addFields(
 				{ name: 'From:', value: getDateFromDateTime(globalMetaData.min) },
 				{ name: 'To:', value: getDateFromDateTime(globalMetaData.max) },
@@ -83,11 +85,11 @@ export async function serverInfoCommandHandler(interaction, pgClient) {
 		new EmbedBuilder()
 			.setURL(url)
 			.setColor(0x0099FF)
-			.setImage('attachment://' + channelsFileName),
+			.setImage(ATTACHMENT_PREFIX + channelsFileName),
 		new EmbedBuilder()
 			.setURL(url)
 			.setColor(0x0099FF)
-			.setImage('attachment://' + usersFileName)
+			.setImage(ATTACHMENT_PREFIX + usersFileName)
 	];
 	await interaction.editReply({ embeds: messageEmbeds, files: [globalFile, channelsFile, userFile] });
 }

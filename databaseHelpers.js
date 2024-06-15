@@ -52,6 +52,24 @@ function reduceDates(dates) {
 	return dates;
 }
 
+function addMisssingDates(dates) {
+	let min = '?';
+	let max = '?';
+	if(dates.length > 0) {
+		min = dates[0].date;
+		max = dates[dates.length - 1].date;
+
+		for(const date = new Date(min); date.getTime() < max.getTime(); date.setDate(date.getDate() + 1)) {
+			if(!dates.find((x) => x.date.getTime() === date.getTime())) {
+				dates.push({ date: new Date(date), count: 0 });
+			}
+		}
+		dates = reduceDates(dates);
+	}
+
+	return { dates, min, max };
+}
+
 ///// CHANNEL INFO
 export async function getTopUsersForChannel(pgClient, guild, channel, amount, from, toArg) {
 	const to = new Date(toArg);
@@ -95,7 +113,7 @@ export async function getTopUsersForChannel(pgClient, guild, channel, amount, fr
 }
 
 export async function getGlobalMetadataForChannel(pgClient, guild, channel, from, to) {
-	let dates = (await pgClient.query(`
+	let dbDates = (await pgClient.query(`
 		SELECT to_timestamp("createdTimestamp" / 1000)::date as date, COUNT(*) as count
 		FROM public.messages
 		WHERE messages.channel = $1
@@ -115,19 +133,7 @@ export async function getGlobalMetadataForChannel(pgClient, guild, channel, from
 		AND "createdTimestamp" <= $4
 	`, [channel, guild, from.getTime(), to.getTime()])).rows[0];
 
-	let min = '?';
-	let max = '?';
-	if(dates.length > 0) {
-		min = dates[0].date;
-		max = dates[dates.length - 1].date;
-
-		for(const date = new Date(min); date.getTime() < max.getTime(); date.setDate(date.getDate() + 1)) {
-			if(!dates.find((x) => x.date.getTime() === date.getTime())) {
-				dates.push({ date: new Date(date), count: 0 });
-			}
-		}
-		dates = reduceDates(dates);
-	}
+	const { dates, min, max } = addMisssingDates(dbDates);
 
 	return { dates, min, max, count, users };
 }
@@ -176,7 +182,7 @@ export async function getTopChannelsForUser(pgClient, guild, user, amount, from,
 }
 
 export async function getGlobalMetadataForUser(pgClient, guild, user, from, to) {
-	let dates = (await pgClient.query(`
+	let dbDates = (await pgClient.query(`
 		SELECT to_timestamp("createdTimestamp" / 1000)::date as date, COUNT(*) as count
 		FROM public.messages
 		WHERE messages.author = $1
@@ -196,26 +202,15 @@ export async function getGlobalMetadataForUser(pgClient, guild, user, from, to) 
 		AND "createdTimestamp" <= $4
 	`, [user, guild, from.getTime(), to.getTime()])).rows[0];
 
-	let min = '?';
-	let max = '?';
-	if(dates.length > 0) {
-		min = dates[0].date;
-		max = dates[dates.length - 1].date;
 
-		for(const date = new Date(min); date.getTime() < max.getTime(); date.setDate(date.getDate() + 1)) {
-			if(!dates.find((x) => x.date.getTime() === date.getTime())) {
-				dates.push({ date: new Date(date), count: 0 });
-			}
-		}
-		dates = reduceDates(dates);
-	}
+	const { dates, min, max } = addMisssingDates(dbDates);
 
 	return { dates, min, max, count };
 }
 
 /// SERVER INFO
 export async function getGlobalMetadataForServer(pgClient, guild, from, to) {
-	let dates = (await pgClient.query(`
+	let dbDates = (await pgClient.query(`
 		SELECT to_timestamp("createdTimestamp" / 1000)::date as date, COUNT(*) as count
 		FROM public.messages
 		WHERE messages.guild = $1
@@ -233,19 +228,8 @@ export async function getGlobalMetadataForServer(pgClient, guild, from, to) {
 		AND "createdTimestamp" <= $3
 	`, [guild, from.getTime(), to.getTime()])).rows[0];
 
-	let min = '?';
-	let max = '?';
-	if(dates.length > 0) {
-		min = dates[0].date;
-		max = dates[dates.length - 1].date;
 
-		for(const date = new Date(min); date.getTime() < max.getTime(); date.setDate(date.getDate() + 1)) {
-			if(!dates.find((x) => x.date.getTime() === date.getTime())) {
-				dates.push({ date: new Date(date), count: 0 });
-			}
-		}
-		dates = reduceDates(dates);
-	}
+	const { dates, min, max } = addMisssingDates(dbDates);
 
 	return { dates, min, max, count, users };
 }
