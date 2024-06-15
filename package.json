@@ -2,7 +2,7 @@
 	"type": "module",
 	"dependencies": {
 		"chart.js-image": "^6.1.3",
-		"discord.js": "^14.15.2",
-		"pg": "^8.11.5"
+		"discord.js": "^14.15.3",
+		"pg": "^8.12.0"
 	}
 }
