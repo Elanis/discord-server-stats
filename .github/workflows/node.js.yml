@@ -21,7 +21,7 @@ jobs:
     - run: npm ci
 
     - name: SonarQube Scan
-      uses: sonarsource/sonarqube-scan-action@v2.2
+      uses: sonarsource/sonarqube-scan-action@v5.0
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
@@ -62,7 +62,7 @@ jobs:
       - run: npm ci
 
       - name: Build & Push Docker image
-        uses: docker/build-push-action@v5.4.0
+        uses: docker/build-push-action@v6.15.0
         with:
           push: true
           context: .
