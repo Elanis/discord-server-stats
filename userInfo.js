@@ -2,15 +2,15 @@ import { ApplicationCommandOptionType, AttachmentBuilder, EmbedBuilder, Permissi
 
 import { getDateFromDateTime } from './helpers.js';
 
-import { getTopChannelsForUser, getGlobalMetadataForUser } from './databaseHelpers.js';
-import { getChart, getBarChart } from './getChart.js';
+import { getGlobalMetadataForUser, getTopChannelsForUser } from './databaseHelpers.js';
+import { getBarChart, getChart } from './getChart.js';
 
 export async function userInfoCommandHandler(interaction, _client, pgClient) {
 	await interaction.deferReply();
 
 	let user = interaction.options.getUser('user');
 
-	if(user === null) {
+	if (user === null) {
 		user = interaction.user;
 	}
 
@@ -24,12 +24,13 @@ export async function userInfoCommandHandler(interaction, _client, pgClient) {
 	const globalMetaData = await getGlobalMetadataForUser(pgClient, interaction.guildId, user.id, from, to);
 	const top10Channels = await getTopChannelsForUser(pgClient, interaction.guildId, user.id, 10, globalMetaData.min, globalMetaData.max);
 
-	const globalChart = getChart(
+	const globalChart = await getChart(
 		'line',
 		globalMetaData.dates.map((x) => getDateFromDateTime(x.date)),
 		[
 			{
-				label: "",
+				fill: 'origin',
+				label: "Messages",
 				borderColor: "rgb(255,+99,+132)",
 				backgroundColor: "rgba(255,+99,+132,+.5)",
 				data: globalMetaData.dates.map((x) => x.count),
@@ -37,11 +38,11 @@ export async function userInfoCommandHandler(interaction, _client, pgClient) {
 		]
 	);
 	const globalFileName = `${interaction.guildId}-${user.id}-global.png`;
-	const globalFile = new AttachmentBuilder(await globalChart.toBuffer(), { name: globalFileName });
+	const globalFile = new AttachmentBuilder(globalChart, { name: globalFileName });
 
-	const channelsChart = getBarChart(top10Channels);
+	const channelsChart = await getBarChart(top10Channels);
 	const channelsFileName = `${interaction.guildId}-${user.id}-channels.png`;
-	const channelsFile = new AttachmentBuilder(await channelsChart.toBuffer(), { name: channelsFileName });
+	const channelsFile = new AttachmentBuilder(channelsChart, { name: channelsFileName });
 
 	const url = `https://discord.com/users/${user.id}`;
 	const messageEmbeds = [

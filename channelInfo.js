@@ -2,15 +2,15 @@ import { ApplicationCommandOptionType, AttachmentBuilder, EmbedBuilder, Permissi
 
 import { getDateFromDateTime } from './helpers.js';
 
-import { getTopUsersForChannel, getGlobalMetadataForChannel } from './databaseHelpers.js';
-import { getChart, getBarChart } from './getChart.js';
+import { getGlobalMetadataForChannel, getTopUsersForChannel } from './databaseHelpers.js';
+import { getBarChart, getChart } from './getChart.js';
 
 export async function channelInfoCommandHandler(interaction, pgClient) {
 	await interaction.deferReply();
 
 	let channel = interaction.options.getChannel('channel');
 
-	if(channel === null) {
+	if (channel === null) {
 		channel = interaction.channel;
 	}
 
@@ -25,12 +25,13 @@ export async function channelInfoCommandHandler(interaction, pgClient) {
 	const top10Users = await getTopUsersForChannel(pgClient, interaction.guildId, channel.id, 10, globalMetaData.min, globalMetaData.max);
 	
 	// Get charts
-	const globalChart = getChart(
+	const globalChart = await getChart(
 		'line',
 		globalMetaData.dates.map((x) => getDateFromDateTime(x.date)),
 		[
 			{
-				label: "",
+				fill: 'origin',
+				label: "Messages",
 				borderColor: "rgb(255,+99,+132)",
 				backgroundColor: "rgba(255,+99,+132,+.5)",
 				data: globalMetaData.dates.map((x) => x.count),
@@ -38,11 +39,11 @@ export async function channelInfoCommandHandler(interaction, pgClient) {
 		]
 	);
 	const globalFileName = `${interaction.guildId}-${channel.id}-global.png`;
-	const globalFile = new AttachmentBuilder(await globalChart.toBuffer(), { name: globalFileName });
+	const globalFile = new AttachmentBuilder(globalChart, { name: globalFileName });
 
-	const usersChart = getBarChart(top10Users);
+	const usersChart = await getBarChart(top10Users);
 	const usersFileName = `${interaction.guildId}-${channel.id}-users.png`;
-	const userFile = new AttachmentBuilder(await usersChart.toBuffer(), { name: usersFileName });
+	const userFile = new AttachmentBuilder(usersChart, { name: usersFileName });
 
 	const url = `https://discord.com/channels/${interaction.guildId}/${channel.id}`;
 	const messageEmbeds = [

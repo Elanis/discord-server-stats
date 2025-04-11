@@ -5,16 +5,18 @@ import pg from 'pg';
 import { botToken, connectionString, SYNC_INTERVAL } from './config.js';
 
 import { channelInfoCommand, channelInfoCommandHandler } from './channelInfo.js';
+import { initialLoad } from './initialLoad.js';
 import { serverInfoCommand, serverInfoCommandHandler } from './serverInfo.js';
 import { userInfoCommand, userInfoCommandHandler } from './userInfo.js';
-import { initialLoad } from './initialLoad.js';
 
-const client = new Client({ intents: [
-	GatewayIntentBits.Guilds,
-	GatewayIntentBits.GuildMembers,
-	GatewayIntentBits.GuildMessages,
-	GatewayIntentBits.MessageContent,
-] });
+const client = new Client({
+	intents: [
+		GatewayIntentBits.Guilds,
+		GatewayIntentBits.GuildMembers,
+		GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.MessageContent,
+	]
+});
 
 const pgClient = new pg.Client(connectionString);
 await pgClient.connect();
@@ -30,22 +32,22 @@ client.once(Events.ClientReady, (c) => {
 
 	try {
 		client.application?.commands.set(commandsList)
-	} catch(e) {
+	} catch (e) {
 		console.error(e);
 	}
 
 
-	const executeLoad = async() => {
+	const executeLoad = async () => {
 		await initialLoad(client, pgClient);
 		setTimeout(executeLoad, SYNC_INTERVAL);
 	};
 	executeLoad();
 });
 
-client.on('interactionCreate',  async(interaction) => {
+client.on('interactionCreate', async (interaction) => {
 	try {
-		if(interaction.isCommand()) {
-			switch(interaction.commandName) {
+		if (interaction.isCommand()) {
+			switch (interaction.commandName) {
 				case 'channelinfo':
 					await channelInfoCommandHandler(interaction, pgClient);
 					break;
@@ -57,7 +59,7 @@ client.on('interactionCreate',  async(interaction) => {
 					break;
 			}
 		}
-	} catch(e) {
+	} catch (e) {
 		console.error(e);
 	}
 });
