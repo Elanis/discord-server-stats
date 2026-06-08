@@ -21,6 +21,11 @@ export async function getChart(type, labels, datasets) {
 		data: {
 			labels,
 			datasets
+		},
+		options: {
+			y: {
+				beginAtZero: true,
+			}
 		}
 	};
 
