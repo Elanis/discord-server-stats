@@ -27,11 +27,11 @@ const commandsList = [
 	userInfoCommand
 ];
 
-client.once(Events.ClientReady, (c) => {
+client.once(Events.ClientReady, async (c) => {
 	console.log(`Ready! Logged in as ${c.user.tag}`);
 
 	try {
-		client.application?.commands.set(commandsList)
+		await client.application?.commands.set(commandsList)
 	} catch (e) {
 		console.error(e);
 	}
@@ -44,7 +44,7 @@ client.once(Events.ClientReady, (c) => {
 	executeLoad();
 });
 
-client.on('interactionCreate', async (interaction) => {
+client.on(Events.InteractionCreate, async (interaction) => {
 	try {
 		if (interaction.isCommand()) {
 			switch (interaction.commandName) {
