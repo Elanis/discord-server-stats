@@ -4,6 +4,9 @@
 		"chart.js": "^4.5.1",
 		"chartjs-node-canvas": "^5.0.0",
 		"discord.js": "^14.27.0",
-		"pg": "^8.22.0"
+		"pg": "^8.23.0"
+	},
+	"allowScripts": {
+		"canvas@3.1.0": true
 	}
 }
