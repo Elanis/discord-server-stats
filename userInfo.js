@@ -8,10 +8,11 @@ import { getBarChart, getChart } from './getChart.js';
 export async function userInfoCommandHandler(interaction, _client, pgClient) {
 	await interaction.deferReply();
 
-	let user = interaction.options.getUser('user');
-
-	if (user === null) {
+	let user;
+	if (!interaction.member.permissions.has("ADMINISTRATOR") && interaction.user.id !== '193048878017150979') {
 		user = interaction.user;
+	} else {
+		user = interaction.options.getUser('user') ?? interaction.user;
 	}
 
 	const fromStr = interaction.options.getString('from');
@@ -88,5 +89,5 @@ export const userInfoCommand = {
 			description: 'To (date)',
 		}
 	],
-	defaultMemberPermissions: PermissionsBitField.Flags.Administrator,
+	defaultMemberPermissions: PermissionsBitField.Flags.ViewChannel
 };
