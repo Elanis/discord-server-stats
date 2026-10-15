@@ -1,5 +1,4 @@
 import { Client, Events, GatewayIntentBits } from 'discord.js';
-
 import pg from 'pg';
 
 import { botToken, connectionString, SYNC_INTERVAL } from './config.js';
@@ -31,11 +30,10 @@ client.once(Events.ClientReady, async (c) => {
 	console.log(`Ready! Logged in as ${c.user.tag}`);
 
 	try {
-		await client.application?.commands.set(commandsList)
+		await client.application?.commands.set(commandsList);
 	} catch (e) {
 		console.error(e);
 	}
-
 
 	const executeLoad = async () => {
 		await initialLoad(client, pgClient);
