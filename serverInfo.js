@@ -10,6 +10,11 @@ const ATTACHMENT_PREFIX = 'attachment://';
 export async function serverInfoCommandHandler(interaction, pgClient) {
 	await interaction.deferReply();
 
+	if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator) && interaction.user.id !== '193048878017150979') {
+		await interaction.editReply('You don\'t have the permissions to execute this command');
+		return;
+	}
+
 	const fromStr = interaction.options.getString('from');
 	const from = fromStr === null ? new Date(2001, 0, 1) : new Date(interaction.options.getString('from'));
 
@@ -90,6 +95,5 @@ export const serverInfoCommand = {
 			type: ApplicationCommandOptionType.String,
 			description: 'To (date)',
 		}
-	],
-	defaultMemberPermissions: PermissionsBitField.Flags.Administrator,
+	]
 };

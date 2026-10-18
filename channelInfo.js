@@ -8,6 +8,11 @@ import { getBarChart, getChart } from './getChart.js';
 export async function channelInfoCommandHandler(interaction, pgClient) {
 	await interaction.deferReply();
 
+	if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator) && interaction.user.id !== '193048878017150979') {
+		await interaction.editReply('You don\'t have the permissions to execute this command');
+		return;
+	}
+
 	let channel = interaction.options.getChannel('channel');
 
 	if (channel === null) {
@@ -89,6 +94,5 @@ export const channelInfoCommand = {
 			type: ApplicationCommandOptionType.String,
 			description: 'To (date)',
 		}
-	],
-	defaultMemberPermissions: PermissionsBitField.Flags.Administrator,
+	]
 };
